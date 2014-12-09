@@ -9,29 +9,22 @@ PORT = 8888
 
 turn = True;
 
-def getturn():
-	# open connection to server
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((HOST, PORT))
+s = None
 
+def getturn():
 	response = s.recv(1024)
+	print response
 	if (response == "WAIT"):
-		turn = False;
 		print "Get Second turn ..."
+		return False
 	elif (response == "NOW"):
-		turn = True;
 		print "Get First turn ..."
+		return True
 	else:
 		s.close()
 		quit()
 
-	s.close()
-
 def sendanswer():
-	# open connection to server
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((HOST, PORT))
-
 	while True:
 		print "Waiting ..."
 
@@ -42,20 +35,14 @@ def sendanswer():
 			print "Now Answer!"
 			break
 
-	userinput = raw_input("Masukkan kombinasi warna K,M,H")
-	s.send(userinput)
+		time.sleep(0.5)
 
-	s.close()
+	userinput = raw_input("Masukkan kombinasi jawaban warna K,M,H")
+	s.send(userinput)
 
 def sendquest():
-	# open connection to server
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((HOST, PORT))
-
 	userinput = raw_input("Masukkan kombinasi warna K,M,H")
 	s.send(userinput)
-
-	s.close()
 
 def menang():
 	print "MUSUH ANDA COPO!"
@@ -64,11 +51,8 @@ def kalah():
 	print "ANDA COPO!"
 
 def getresult():
-	# open connection to server
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((HOST, PORT))
-
 	while True:
+		global turn
 		s.send("NEEDRESULT")
 
 		response = s.recv(1024)
@@ -97,8 +81,6 @@ def getresult():
 		turn = not turn
 		break
 
-	s.close()
-
 # main program starts here
 if __name__ == "__main__":
 	try:
@@ -111,8 +93,13 @@ if __name__ == "__main__":
 		HOST = sys.argv[1]
 		PORT = int(sys.argv[2])
 
+		# open connection to server
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.connect((HOST, PORT))
+
 		# get turn from server
-		getturn();
+		global turn
+		turn = getturn();
 
 		while True:
 			# if his turn, input
@@ -124,6 +111,7 @@ if __name__ == "__main__":
 			else:
 				sendanswer()
 				getresult()
+				continue
 
 			time.sleep(0.1)
 

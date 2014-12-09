@@ -4,6 +4,7 @@ import json
 import os
 import thread
 import time
+import threading
 
 HOST = ''
 PORT = 8888
@@ -62,6 +63,11 @@ if __name__ == "__main__":
 		def clientthread(conn):
 			while True:
 				msg_str = conn.recv(1024)
+
+				global quest
+				global ans
+				print quest
+				print ans
 
 				print "CLIENT ASK " + msg_str
 
