@@ -4,8 +4,8 @@ import json
 import os
 import time
 
-#HOST = '192.168.42.1'
-HOST = 'localhost'
+HOST = '192.168.42.1'
+# HOST = 'localhost'
 PORT = 10000
 
 turn = True;
