@@ -4,8 +4,9 @@ import json
 import os
 import time
 
-HOST = ''
-PORT = 8888
+#HOST = '192.168.42.1'
+HOST = 'localhost'
+PORT = 10000
 
 turn = True;
 
@@ -13,7 +14,6 @@ s = None
 
 def getturn():
 	response = s.recv(1024)
-	print response
 	if (response == "WAIT"):
 		print "Get Second turn ..."
 		return False
@@ -25,8 +25,8 @@ def getturn():
 		quit()
 
 def sendanswer():
+	print "Waiting for other player..."
 	while True:
-		print "Waiting ..."
 
 		s.send("AREDONE")
 		response = s.recv(1024)
@@ -37,22 +37,24 @@ def sendanswer():
 
 		time.sleep(0.5)
 
-	userinput = raw_input("Masukkan kombinasi jawaban warna K,M,H")
+	userinput = raw_input("Masukkan kombinasi jawaban warna K,M,H: ")
 	s.send(userinput)
+	time.sleep(0.5)
 
 def sendquest():
-	userinput = raw_input("Masukkan kombinasi warna K,M,H")
+	userinput = raw_input("Masukkan kombinasi warna K,M,H: ")
 	s.send(userinput)
+	time.sleep(0.5)
 
 def menang():
-	print "MUSUH ANDA COPO!"
+	print "Selamat, Anda menang!"
 
 def kalah():
-	print "ANDA COPO!"
+	print "Maaf, Anda kalah!"
 
 def getresult():
+	global turn
 	while True:
-		global turn
 		s.send("NEEDRESULT")
 
 		response = s.recv(1024)
@@ -79,26 +81,17 @@ def getresult():
 				kalah()
 
 		turn = not turn
+		time.sleep(0.5)
 		break
 
 # main program starts here
 if __name__ == "__main__":
 	try:
-		# check program arguments
-		if len(sys.argv) != 3:
-			print "Usage: python client.py <host> <port>"
-			quit()
-
-		# get server address
-		HOST = sys.argv[1]
-		PORT = int(sys.argv[2])
-
 		# open connection to server
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.connect((HOST, PORT))
 
 		# get turn from server
-		global turn
 		turn = getturn();
 
 		while True:
