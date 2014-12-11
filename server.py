@@ -5,9 +5,10 @@ import os
 import thread
 import time
 import threading
+import subprocess
 
-# HOST = '192.168.42.1'
-HOST = 'localhost'
+HOST = '192.168.42.1'
+# HOST = 'localhost'
 PORT = 10000
 
 n = 0
@@ -15,6 +16,7 @@ t = 0
 
 quest = 'undefined'
 ans = 'undefined'
+delay = 2
 
 def giveturn(conn):
 
@@ -28,6 +30,16 @@ def giveturn(conn):
 
 	conn.send(msg)
 
+def lightemup(str):
+	for c in str:
+		if c.upper() == 'K':
+			subprocess.call('./gpio9.sh', shell=True)
+		elif c.upper() == 'M':
+			subprocess.call('./gpio10.sh', shell=True)
+		elif c.upper() == 'H':
+			subprocess.call('./gpio11.sh', shell=True)
+
+
 # client thread function
 def clientthread(conn, n):
 	lastreq = ''
@@ -37,6 +49,7 @@ def clientthread(conn, n):
 		global quest
 		global ans
 		global turn
+		global delay
 
 		if msg_str != lastreq:
 			print "CLIENT " + str(n) + " ASK " + msg_str
@@ -46,6 +59,7 @@ def clientthread(conn, n):
 			if (quest == 'undefined'):
 				conn.send("NOPE")
 			else:
+				time.sleep(len(quest)+1)
 				conn.send("GO")
 
 		elif (msg_str == "NEEDRESULT"):
@@ -54,6 +68,9 @@ def clientthread(conn, n):
 			elif (ans == 'undefined'):
 				conn.send('WAIT')
 			else:
+				#global delay
+				time.sleep(delay)
+				delay = 0
 				print "Result:",
 				if (quest == ans):
 					print "menang"
@@ -62,7 +79,7 @@ def clientthread(conn, n):
 					print "kalah"
 					conn.send("KALAH")
 
-				time.sleep(1)
+				#time.sleep(8)
 				quest = 'undefined'
 				ans = 'undefined'
 
@@ -72,7 +89,9 @@ def clientthread(conn, n):
 				print "Quest:", quest
 			elif (ans == 'undefined'):
 				ans = msg_str
-				print "Answer:", ans 
+				delay = len(ans)+1
+				print "Answer:", ans
+			lightemup(msg_str)
 
 # main program starts here
 if __name__ == "__main__":
