@@ -11,46 +11,71 @@ PORT = 10000
 turn = True;
 
 s = None
+# submit = ''
 
 def getturn():
 	response = s.recv(1024)
 	if (response == "WAIT"):
-		print "Get Second turn ..."
+		print "Too bad, you're second :)"
 		return False
 	elif (response == "NOW"):
-		print "Get First turn ..."
+		print "Whoo! You get to go first!"
 		return True
 	else:
 		s.close()
 		quit()
 
-def sendanswer():
-	print "Waiting for other player..."
-	while True:
+def is_valid(str):
+	for c in str:
+		if c.upper() not in ['K', 'M', 'H']:
+			return False
+	return True
 
+def get_input():
+	inp = raw_input("Can you light 'em up? (K, M, or H): ")
+	while not is_valid(inp):
+		print "Whoops, make sure it's one of K, M, or H!"
+		inp = raw_input("Can you light 'em up? (K, M, or H): ")
+	print
+	return inp
+
+def sendanswer():
+	print "Please wait, the opponent is typing..."
+	
+	# global submit
+
+	while True:
 		s.send("AREDONE")
 		response = s.recv(1024)
-
 		if (response == "GO"):
-			print "Now Answer!"
+			print
+			print "You're good to go!"
 			break
-
 		time.sleep(0.5)
 
-	userinput = raw_input("Masukkan kombinasi jawaban warna K,M,H: ")
-	s.send(userinput)
+	answer = get_input()
+	s.send(answer)
+	print "Sent! Watch the lights..."
+	# submit = answer
 	time.sleep(0.5)
 
 def sendquest():
-	userinput = raw_input("Masukkan kombinasi warna K,M,H: ")
-	s.send(userinput)
+	# global submit
+	quest = get_input()
+	s.send(quest)
+	print "Sent! Watch the lights...\nPlease wait for your opponent's answer..."
+	# submit = quest
 	time.sleep(0.5)
 
 def menang():
-	print "Selamat, Anda menang!"
+	print
+	print "~~~~~~~~~~~~ Congratulations! You win! ~~~~~~~~~~~~"
+	print
 
 def kalah():
-	print "Maaf, Anda kalah!"
+	print
+	print "~~~~~~~~~~~~ Sorry, you lost! ~~~~~~~~~~~~"
+	print
 
 def getresult():
 	global turn
@@ -69,6 +94,7 @@ def getresult():
 			print "OPPONENT RAGE QUIT!! VOLVO PLS BAN!"
 			quit()
 
+		# time.sleep(len(submit)+1)
 		if (v):
 			if (turn):
 				kalah()
@@ -81,11 +107,21 @@ def getresult():
 				kalah()
 
 		turn = not turn
+		print "Now let's switch turns!"
 		time.sleep(0.5)
 		break
 
 # main program starts here
 if __name__ == "__main__":
+	print """
+=================================================
+===                 Welcome to                ===
+===        Light 'Em Up: The Memory Game!     ===
+===                   (CLI)                   ===
+===                                           ===
+===             a game by ORENJI              ===
+=================================================
+	"""
 	try:
 		# open connection to server
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -111,3 +147,10 @@ if __name__ == "__main__":
 	except KeyboardInterrupt:
 		print('\nKeyboard interrupt detected. Exiting gracefully...\n')
 		quit()
+	except socket.error, msg:
+		if msg[0] == 32:
+			print "The server is reset, please connect again.\n"
+		elif msg[0] == 111:
+			print "Connection refused; is the server ready yet?\n"
+		else:
+			print "Unhandled error: " + msg
