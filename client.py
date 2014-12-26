@@ -128,8 +128,10 @@ if __name__ == "__main__":
 		s.connect((HOST, PORT))
 
 		# get turn from server
+		s.settimeout(0.5)
 		turn = getturn();
 
+		s.settimeout(None)
 		while True:
 			# if his turn, input
 			if (turn):
@@ -152,5 +154,8 @@ if __name__ == "__main__":
 			print "The server is reset, please connect again.\n"
 		elif msg[0] == 111:
 			print "Connection refused; is the server ready yet?\n"
+		elif msg[0] == 'timed out':
+			print "Whoops, maximum number of players reached!\n"
 		else:
-			print "Unhandled error: " + msg
+			print "Unhandled error: "
+			print msg

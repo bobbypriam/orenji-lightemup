@@ -20,6 +20,8 @@ ans = 'undefined'
 flag = False
 getter = -1
 
+restart = False
+
 def giveturn(conn):
 
 	# send update message to client
@@ -32,6 +34,9 @@ def giveturn(conn):
 
 	conn.send(msg)
 
+def light(arg, num):
+	subprocess.call('/home/pi/lightemup/lightgpio.sh ' + str(arg) + ' ' + str(num), shell=True)
+
 def lightemup(str):
 	for c in str:
 		if c.upper() == 'K':
@@ -41,30 +46,29 @@ def lightemup(str):
 		elif c.upper() == 'H':
 			onesec(11)	
 
-def onesec(arg):
-	num = str(arg)
-	subprocess.call('./lightgpio.sh 1 ' + num, shell=True)
+def onesec(num):
+	light(1, num)
 	time.sleep(1)
-	subprocess.call('./lightgpio.sh 0 ' + num, shell=True)
+	light(0, num)
 
 def we_got_winner():
-	subprocess.call('./lightgpio.sh 1 17', shell=True)
+	light(1, 17)
 	for _ in xrange(3):
 		for i in xrange(2):
-			arg = str(1-i)
-			subprocess.call('./lightgpio.sh '+arg+' 10', shell=True)
+			arg = 1-i
+			light(arg, 10)
 			time.sleep(0.01)
-			subprocess.call('./lightgpio.sh '+arg+' 9', shell=True)
+			light(arg, 9)
 			time.sleep(0.01)
-			subprocess.call('./lightgpio.sh '+arg+' 11', shell=True)
+			light(arg, 11)
 			time.sleep(0.01)
 	time.sleep(1)
-	subprocess.call('./lightgpio.sh 0 17', shell=True)
+	light(0, 17)
 
 def no_winner():
-	subprocess.call('./lightgpio.sh 1 22', shell=True)
+	light(1, 22)
 	time.sleep(2)
-	subprocess.call('./lightgpio.sh 0 22', shell=True)
+	light(0, 22)
 
 # client thread function
 def clientthread(conn, n):
@@ -76,6 +80,7 @@ def clientthread(conn, n):
 		global ans
 		global flag
 		global getter
+		global restart
 
 		if msg_str != lastreq:
 			print "CLIENT " + str(n) + " ASK (" + msg_str + ")"
@@ -83,6 +88,7 @@ def clientthread(conn, n):
 
 		if (msg_str == ''):
 			print "Lost connection from client " + str(n) + "!"
+			restart = True
 			break
 
 		if (msg_str == "AREDONE"):
@@ -106,7 +112,7 @@ def clientthread(conn, n):
 					time.sleep(len(ans)+1)
 
 				print "Result "+str(n)+":",
-				if (quest == ans):
+				if (quest.upper() == ans.upper()):
 					print "menang"
 					we_got_winner()
 					conn.send("MENANG")
@@ -145,22 +151,32 @@ if __name__ == "__main__":
 		print 'LIGHT \'EM UP SERVER IS RUNNING!'
 		print 'Server opened on on host', HOST, 'port ' + str(PORT)
 		print 'Server ready, now listening...'
-
+		lala = False
 		# response request
 		while True:
-			conn, addr = s.accept()
-			n += 1
-			print 'Connection n = ' + str(n) + ' from ' + addr[0] + ':' + str(addr[1])
+			if n < 2:
+				conn, addr = s.accept()
+				n += 1
+				print 'Connection n = ' + str(n) + ' from ' + addr[0] + ':' + str(addr[1])
 
-			giveturn(conn)
-			
-			if n == 1:
-				subprocess.call('./lightgpio.sh 1 23', shell=True)
+				giveturn(conn)
+				
+				if n == 1:
+					light(1, 23)
+				else:
+					light(1, 24)
+
+				# create thread 
+				thread.start_new_thread(clientthread, (conn,n))
 			else:
-				subprocess.call('./lightgpio.sh 1 24', shell=True)
+				if not lala:
+					print 'haha'
+					lala = True
 
-			# create thread 
-			thread.start_new_thread(clientthread, (conn,n))
+			if restart:
+				light(0, 23)
+				light(0, 24)
+				break
 
 	except socket.error, msg:
 		if msg[0] == 13:
@@ -171,6 +187,6 @@ if __name__ == "__main__":
 		print "Error: Port must be a number.\n"
 	except KeyboardInterrupt:
 		print('\nKeyboard interrupt detected. Exiting gracefully...\n')
-		subprocess.call('./lightgpio.sh 0 23', shell=True)
-		subprocess.call('./lightgpio.sh 0 24', shell=True)
+		light(0, 23)
+		light(0, 24)
 		quit()
